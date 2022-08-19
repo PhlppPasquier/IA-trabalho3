@@ -1,4 +1,8 @@
-def evaluate(individual):
+from random import randint, random, sample
+from matplotlib.pyplot import gca, savefig, ylim, xlim
+from pandas import DataFrame
+
+def evaluate(individual: list) -> int:
     """
     Recebe um indivíduo (lista de inteiros) e retorna o número de ataques
     entre rainhas na configuração especificada pelo indivíduo.
@@ -7,20 +11,26 @@ def evaluate(individual):
     :param individual:list
     :return:int numero de ataques entre rainhas no individuo recebido
     """
-    raise NotImplementedError  # substituir pelo seu codigo
+    attacks = 0
+    for i in range(7):
+        for j in range(i+1, 8):
+            columnsAttack = individual[i] == individual[j]
+            diagonalAttack = individual[i] - i == individual[j] - j or individual[i] + i == individual[j] + j
+            if columnsAttack or diagonalAttack: attacks += 1
+    return attacks
 
 
-def tournament(participants):
+def tournament(participants: list) -> list:
     """
     Recebe uma lista com vários indivíduos e retorna o melhor deles, com relação
     ao numero de conflitos
     :param participants:list - lista de individuos
     :return:list melhor individuo da lista recebida
     """
-    raise NotImplementedError  # substituir pelo seu codigo
+    return min([(evaluate(p), p) for p in participants], key=lambda x:x[0])[1]
 
 
-def crossover(parent1, parent2, index):
+def crossover(parent1: list, parent2: list, index: int) -> tuple[list, list]:
     """
     Realiza o crossover de um ponto: recebe dois indivíduos e o ponto de
     cruzamento (indice) a partir do qual os genes serão trocados. Retorna os
@@ -34,10 +44,11 @@ def crossover(parent1, parent2, index):
     :param index:int
     :return:list,list
     """
-    raise NotImplementedError  # substituir pelo seu codigo
+    return (parent1[:index] + parent2[index:], 
+            parent2[:index] + parent1[index:])
 
 
-def mutate(individual, m):
+def mutate(individual: list, m: int):
     """
     Recebe um indivíduo e a probabilidade de mutação (m).
     Caso random() < m, sorteia uma posição aleatória do indivíduo e
@@ -46,10 +57,14 @@ def mutate(individual, m):
     :param m:int - probabilidade de mutacao
     :return:list - individuo apos mutacao (ou intacto, caso a prob. de mutacao nao seja satisfeita)
     """
-    raise NotImplementedError  # substituir pelo seu codigo
+    if random() < m: 
+        individual[randint(0, 7)] = randint(1, 8)
+    return individual
 
+def generate_random_population(size: int) -> list:
+    return [[randint(1, 8) for _ in range(8)] for _ in range(size)]
 
-def run_ga(g, n, k, m, e):
+def run_ga(g: int, n: int, k: int, m: float, e: bool) -> list:
     """
     Executa o algoritmo genético e retorna o indivíduo com o menor número de ataques entre rainhas
     :param g:int - numero de gerações
@@ -58,5 +73,58 @@ def run_ga(g, n, k, m, e):
     :param m:float - probabilidade de mutação (entre 0 e 1, inclusive)
     :param e:bool - se vai haver elitismo
     :return:list - melhor individuo encontrado
+    """ 
+    population = generate_random_population(n)
+    for generation in range(g):
+        newPopulation = [tournament(population)] if e else [] 
+        while len(newPopulation) < n:
+            individual1 = tournament(sample(population, k))
+            individual2 = tournament(sample(population, k))
+            individual1, individual2 =  crossover(individual1, individual2, 4)
+            individual1 = mutate(individual1, m)
+            individual2 = mutate(individual2, m)
+            newPopulation.extend([individual1, individual2])
+        population = newPopulation
+    return tournament(population)
+
+def run_ga_plot_evolution(g: int, n: int, k: int, m: float, e: bool) -> list:
     """
-    raise NotImplementedError  # substituir pelo seu codigo
+    Executa o algoritmo genético e retorna o indivíduo com o menor número de ataques entre rainhas
+    Plota o grafico da evolucao da populacao.
+    :param g:int - numero de gerações
+    :param n:int - numero de individuos
+    :param k:int - numero de participantes do torneio
+    :param m:float - probabilidade de mutação (entre 0 e 1, inclusive)
+    :param e:bool - se vai haver elitismo
+    :return:list - melhor individuo encontrado
+    """ 
+    evolution = []
+    population = generate_random_population(n)
+    for generation in range(g):
+        newPopulation = [tournament(population)] if e else [] 
+        while len(newPopulation) < n:
+            individual1 = tournament(sample(population, k))
+            individual2 = tournament(sample(population, k))
+            individual1, individual2 =  crossover(individual1, individual2, 4)
+            individual1 = mutate(individual1, m)
+            individual2 = mutate(individual2, m)
+            newPopulation.extend([individual1, individual2])
+        population = newPopulation
+        evalPopulation = [evaluate(p) for p in population]
+        evolution.append({
+            'min': min(evalPopulation),
+            'max': max(evalPopulation),
+            'mean': sum(evalPopulation) / float(len(evalPopulation)),
+        })
+    df = DataFrame(evolution)
+    df = df[['min', 'max', 'mean']]
+    ax = gca()
+    df.plot(kind='line',y='min', color='blue', ax=ax)
+    df.plot(kind='line',y='max', color='red', ax=ax)
+    df.plot(kind='line',y='mean', color='green', ax=ax)
+    ylim(ymin=0)  # this line
+    xlim(xmin=0)  # this line
+    savefig("ga.png")
+    return tournament(population)
+
+run_ga_plot_evolution(80, 20, 10, 0.6, True)
