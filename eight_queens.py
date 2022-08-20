@@ -64,30 +64,26 @@ def mutate(individual: list, m: int):
 def generate_random_population(size: int) -> list:
     return [[randint(1, 8) for _ in range(8)] for _ in range(size)]
 
-def run_ga(g: int, n: int, k: int, m: float, e: bool) -> list:
-    """
-    Executa o algoritmo genético e retorna o indivíduo com o menor número de ataques entre rainhas
-    :param g:int - numero de gerações
-    :param n:int - numero de individuos
-    :param k:int - numero de participantes do torneio
-    :param m:float - probabilidade de mutação (entre 0 e 1, inclusive)
-    :param e:bool - se vai haver elitismo
-    :return:list - melhor individuo encontrado
-    """ 
-    population = generate_random_population(n)
-    for generation in range(g):
-        newPopulation = [tournament(population)] if e else [] 
-        while len(newPopulation) < n:
-            individual1 = tournament(sample(population, k))
-            individual2 = tournament(sample(population, k))
-            individual1, individual2 =  crossover(individual1, individual2, 4)
-            individual1 = mutate(individual1, m)
-            individual2 = mutate(individual2, m)
-            newPopulation.extend([individual1, individual2])
-        population = newPopulation
-    return tournament(population)
+def evaluate_population(population: list) -> dict:
+    evaluatePopulation = [evaluate(p) for p in population]
+    return {
+        'min': min(evaluatePopulation),
+        'max': max(evaluatePopulation),
+        'mean': sum(evaluatePopulation) / float(len(evaluatePopulation)),
+    }
 
-def run_ga_plot_evolution(g: int, n: int, k: int, m: float, e: bool) -> list:
+def plot_evolution(evolution: list):
+    df = DataFrame(evolution)
+    df = df[['min', 'max', 'mean']]
+    ax = gca()
+    df.plot(kind='line',y='min', color='blue', ax=ax)
+    df.plot(kind='line',y='max', color='red', ax=ax)
+    df.plot(kind='line',y='mean', color='green', ax=ax)
+    ylim(ymin=0)  # this line
+    xlim(xmin=0)  # this line
+    savefig("ga.png")
+
+def run_ga(g: int, n: int, k: int, m: float, e: bool, plot=False) -> list:
     """
     Executa o algoritmo genético e retorna o indivíduo com o menor número de ataques entre rainhas
     Plota o grafico da evolucao da populacao.
@@ -97,7 +93,7 @@ def run_ga_plot_evolution(g: int, n: int, k: int, m: float, e: bool) -> list:
     :param m:float - probabilidade de mutação (entre 0 e 1, inclusive)
     :param e:bool - se vai haver elitismo
     :return:list - melhor individuo encontrado
-    """ 
+    """     
     evolution = []
     population = generate_random_population(n)
     for generation in range(g):
@@ -109,22 +105,9 @@ def run_ga_plot_evolution(g: int, n: int, k: int, m: float, e: bool) -> list:
             individual1 = mutate(individual1, m)
             individual2 = mutate(individual2, m)
             newPopulation.extend([individual1, individual2])
+        evolution.append(evaluate_population(newPopulation))
         population = newPopulation
-        evalPopulation = [evaluate(p) for p in population]
-        evolution.append({
-            'min': min(evalPopulation),
-            'max': max(evalPopulation),
-            'mean': sum(evalPopulation) / float(len(evalPopulation)),
-        })
-    df = DataFrame(evolution)
-    df = df[['min', 'max', 'mean']]
-    ax = gca()
-    df.plot(kind='line',y='min', color='blue', ax=ax)
-    df.plot(kind='line',y='max', color='red', ax=ax)
-    df.plot(kind='line',y='mean', color='green', ax=ax)
-    ylim(ymin=0)  # this line
-    xlim(xmin=0)  # this line
-    savefig("ga.png")
+    if plot: plot_evolution(evolution)
     return tournament(population)
 
-run_ga_plot_evolution(80, 20, 10, 0.6, True)
+run_ga(80, 20, 10, 0.6, True, True)
