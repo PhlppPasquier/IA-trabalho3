@@ -58,6 +58,20 @@ class TestEightQueens(unittest.TestCase):
         original = [2, 4, 7, 4, 8, 5, 5, 2]
         mutated = eight_queens.mutate(original[:], 1)  # sends a copy of 'original'
         self.assertNotEqual(original, mutated)
+    
+    def test_elitism(self):
+        """
+        Teste com uma lista de individuos
+        """
+        e = 2
+        participants = [
+            [5, 5, 6, 7, 4, 4, 5, 5], #12
+            [7, 2, 6, 8, 2, 6, 8, 2], #7
+            [5, 1, 4, 2, 5, 4, 1, 1], #8
+            [8, 6, 3, 2, 7, 4, 5, 8], #7
+            [3, 7, 7, 3, 4, 5, 8, 7], #8
+        ]
+        self.assertEqual([[7, 2, 6, 8, 2, 6, 8, 2],[8, 6, 3, 2, 7, 4, 5, 8]], eight_queens.elitism(participants, e))
 
     def test_run_ga(self):
         """
@@ -67,7 +81,7 @@ class TestEightQueens(unittest.TestCase):
         """
         response = timer.timeout(
             eight_queens.run_ga,
-            args=(100, 40, 2, 0.3, True),
+            args=(100, 40, 2, 0.3, 1),
             time_limit=60, default='timeout'
         )
         if response == 'timeout':
