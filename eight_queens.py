@@ -1,6 +1,7 @@
+from heapq import nsmallest
 from random import randint, random, sample
-from matplotlib.pyplot import gca, savefig, ylim, xlim, xlabel, ylabel
-from pandas import DataFrame
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def evaluate(individual: list) -> int:
@@ -15,10 +16,10 @@ def evaluate(individual: list) -> int:
     attacksCount = 0
     for i in range(7):
         for j in range(i + 1, 8):
-            rowAttacks = individual[i] == individual[j]
-            diagonalAttacks = (individual[i] - i == individual[j] - j 
-                            or individual[i] + i == individual[j] + j)
-            if rowAttacks or diagonalAttacks: 
+            rowAttack = individual[i] == individual[j]
+            diagonalAttack = (individual[i] - i == individual[j] - j 
+                           or individual[i] + i == individual[j] + j)
+            if rowAttack or diagonalAttack: 
                 attacksCount += 1
     return attacksCount
 
@@ -35,7 +36,7 @@ def tournament(participants: list) -> list:
     return bestIndividual
 
 
-def crossover(parent1: list, parent2: list, index: int) -> tuple[list, list]:
+def crossover(parent1: list, parent2: list, index: int) -> (list, list):
     """
     Realiza o crossover de um ponto: recebe dois indivíduos e o ponto de
     cruzamento (indice) a partir do qual os genes serão trocados. Retorna os
@@ -54,7 +55,7 @@ def crossover(parent1: list, parent2: list, index: int) -> tuple[list, list]:
     return offspring1, offspring2
             
 
-def mutate(individual: list, m: int):
+def mutate(individual: list, m: int) -> list:
     """
     Recebe um indivíduo e a probabilidade de mutação (m).
     Caso random() < m, sorteia uma posição aleatória do indivíduo e
@@ -77,9 +78,10 @@ def elitism(population: list, e: int) -> list:
     :param n: int - quantidade maxima da lista resultante
     :return: list - melhores indíviduos da população
     """
-    evalPopulation = sorted([(p, evaluate(p)) for p in population], 
-                            key=lambda x:x[1])
-    return [evalPopulation[i][0] for i in range(e)]
+    evalPopulation = [(p, evaluate(p)) for p in population]
+    evalPopulation.sort(key=lambda x:x[1])
+    nSmallest = [evalPopulation[i][0] for i in range(e)]
+    return nSmallest
 
 
 def generate_random_population(size: int) -> list:
@@ -99,9 +101,9 @@ def evaluate_generation(population: list) -> dict:
     """
     evalPopulation = [evaluate(p) for p in population]
     return {
-        'min': min(evalPopulation),
-        'max': max(evalPopulation),
-        'media': sum(evalPopulation) / float(len(evalPopulation)),
+        'Min': min(evalPopulation),
+        'Max': max(evalPopulation),
+        'Average': sum(evalPopulation) / float(len(evalPopulation)),
     }
 
 
@@ -110,20 +112,20 @@ def plot_evolution(evolution: list):
     Dado uma lista de evolucao, salva o grafico em um arquivo png
     :param evolution: list
     """
-    df = DataFrame(evolution)
-    df = df[['min', 'max', 'media']]
-    ax = gca()
-    df.plot(kind='line',y='min', color='blue', ax=ax)
-    df.plot(kind='line',y='max', color='red', ax=ax)
-    df.plot(kind='line',y='media', color='green', ax=ax)
-    ylim(ymin=0)  
-    xlim(xmin=0)
-    ylabel("Nº de ataques entre rainhas")
-    xlabel("Geração")
-    savefig("ga.png")
+    df = pd.DataFrame(evolution)
+    df = df[['Min', 'Max', 'Average']]
+    ax = plt.gca()
+    df.plot(kind='line',y='Min', color='blue', ax=ax)
+    df.plot(kind='line',y='Max', color='red', ax=ax)
+    df.plot(kind='line',y='Average', color='green', ax=ax)
+    plt.ylim(ymin=0)  
+    plt.xlim(xmin=0)
+    plt.ylabel("Nº de ataques entre rainhas")
+    plt.xlabel("Geração")
+    plt.savefig("ga.png")
 
 
-def run_ga(g: int, n: int, k: int, m: float, e: int, plot=False) -> list:
+def run_ga(g: int, n: int, k: int, m: float, e: int) -> list:
     """
     Executa o algoritmo genético e retorna o indivíduo com o menor número de ataques entre rainhas
     :param g:int - numero de gerações
@@ -140,14 +142,14 @@ def run_ga(g: int, n: int, k: int, m: float, e: int, plot=False) -> list:
         while len(newPopulation) < n:
             individual1 = tournament(sample(population, k))
             individual2 = tournament(sample(population, k))
-            individual1, individual2 =  crossover(individual1, individual2, 4)
+            individual1, individual2 =  crossover(individual1, individual2, randint(0, 7))
             individual1 = mutate(individual1, m)
             individual2 = mutate(individual2, m)
             newPopulation.extend([individual1, individual2])
         evolution.append(evaluate_generation(newPopulation))
         population = newPopulation
-    if plot: plot_evolution(evolution)
+    plot_evolution(evolution)
     return tournament(population)
 
 
-run_ga(80, 20, 10, 0.6, 2, True)
+run_ga(80, 20, 10, 0.6, 1)
