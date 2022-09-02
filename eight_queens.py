@@ -148,8 +148,8 @@ def run_ga(g: int, n: int, k: int, m: float, e: int) -> list:
             newPopulation.extend([individual1, individual2])
         evolution.append(evaluate_generation(newPopulation))
         population = newPopulation
-    plot_evolution(evolution)
+    #plot_evolution(evolution)
     return tournament(population)
 
 
-run_ga(80, 20, 10, 0.6, 1)
+#run_ga(80, 20, 10, 0.6, 1)
