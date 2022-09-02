@@ -1,4 +1,3 @@
-from heapq import nsmallest
 from random import randint, random, sample
 import pandas as pd
 import matplotlib.pyplot as plt
