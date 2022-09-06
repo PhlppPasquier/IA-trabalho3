@@ -17,14 +17,22 @@ Obs.: Como o crossover e a mutação possuem randomicidade, os gráficos gerados
 ## Não me perguntes onde fica o Alegrete...
 
 Valores iniciais inteiros que resultam na melhor execução da nossa regressão linear:
+
 theta_0 = -3
+
 theta_1 = 6
+
 alpha = 0.01
+
 num_iterations = 90
 
+
 Valores finais aproximados:
+
 theta_0 = -3.4650596837677825
+
 theta_1 = 1.1621159649377641
+
 
 O melhor erro quadrático médio obtido foi entorno de 8.527791858640681
 (Que pode ser diminuido com um numero maior de iterações, porém, será uma melhoria imperceptivel)
